@@ -1,0 +1,18 @@
+# Build output and tools
+/chromium/
+/depot_tools/
+/out/
+/keys/
+components/ublock/cache/
+
+# Android APK / AAB binaries
+*.apk
+*.aab
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

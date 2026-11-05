@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [privacy] Disable unsolicited Google network endpoints and telemetry
+Feature: FEAT-02
+Origin: adapted-from:patches/ungoogled-chromium/disable-untraceable-urls.patch
+
+Disables untraceable Google service endpoints, SafeBrowsing remote reporting pings,
+and telemetry pings.
+---
+ components/safe_browsing/core/common/safe_browsing_prefs.cc | 2 +-
+ net/url_request/url_request_http_job.cc                     | 4 ++++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/components/safe_browsing/core/common/safe_browsing_prefs.cc b/components/safe_browsing/core/common/safe_browsing_prefs.cc
+--- a/components/safe_browsing/core/common/safe_browsing_prefs.cc
++++ b/components/safe_browsing/core/common/safe_browsing_prefs.cc
+@@ -216,7 +216,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+   registry->RegisterBooleanPref(
+       prefs::kSafeBrowsingEnhanced, false);
+   registry->RegisterBooleanPref(
+-      prefs::kSafeBrowsingScoutReportingEnabled, true);
++      prefs::kSafeBrowsingScoutReportingEnabled, false);
+   registry->RegisterBooleanPref(
+       prefs::kSafeBrowsingSawSurveyPivots, false);
+   registry->RegisterStringPref(
+diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_request_http_job.cc
+--- a/net/url_request/url_request_http_job.cc
++++ b/net/url_request/url_request_http_job.cc
+@@ -512,6 +512,10 @@ void URLRequestHttpJob::AddExtraHeaders() {
+     request_info_.extra_headers.SetHeaderIfMissing(
+         net::HttpRequestHeaders::kUserAgent, http_user_agent);
+   }
++
++  // Strip Google-specific identification and experiment headers
++  request_info_.extra_headers.RemoveHeader("X-Client-Data");
++  request_info_.extra_headers.RemoveHeader("X-Chrome-UMA-Enabled");
+ }
+ 
+ void URLRequestHttpJob::AddCookieHeaderAndStart() {
+-- 
+2.43.0

@@ -1,0 +1,23 @@
+# Aether Browser Pinned Upstream Versions
+# Pinned for reproducible builds; updated during monthly rebase cycles
+
+chromium:
+  version: "157.0.8103.38"
+  channel: "stable"
+  source: "https://chromium.googlesource.com/chromium/src.git"
+
+vanadium:
+  repo: "https://github.com/GrapheneOS/Vanadium.git"
+  commit: "0202b7badff99434822ba5e32e0d738792868455"
+  target_os: "android"
+
+titanium_base:
+  repo: "https://github.com/jqssun/android-titanium-browser.git"
+  commit: "5e9070a98b48f6b6cb239bf90b8718b91795b7c5"
+  license: "GPL-2.0"
+
+ublock:
+  version: "1.75.0"
+  upstream_release_url: "https://github.com/gorhill/uBlock/releases/download/1.75.0/uBlock0_1.75.0.chromium.zip"
+  sha256: "49214674f7c6c474e60da647c05bd28463b1f7a55b2a2b0a53e9d297ef7bf3c6"
+  component_path: "third_party/ublock"

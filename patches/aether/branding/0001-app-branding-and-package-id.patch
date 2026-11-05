@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [branding] Rebrand Chromium Android application to Aether Browser
+Feature: FEAT-17
+Origin: original
+
+Sets application display strings and branding identifiers for Android.
+---
+ chrome/browser/ui/android/strings/android_chrome_strings.grd | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1025,7 +1025,7 @@
+       <!-- Application name and common browser labels -->
+       <message name="IDS_APP_NAME" desc="The name of the browser application.">
+-        Chromium
++        Aether
+       </message>
+       <message name="IDS_FRE_WELCOME" desc="Title for the Welcome screen.">
+-        Welcome to Chromium
++        Welcome to Aether
+       </message>
+       <message name="IDS_ABOUT_TITLE" desc="Title for About settings.">
+-        About Chromium
++        About Aether
+       </message>
+-- 
+2.43.0

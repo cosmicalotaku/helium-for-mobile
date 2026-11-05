@@ -1,0 +1,24 @@
+# Aether Browser Ordered Patch Series
+# Applied sequentially onto Chromium src after Vanadium submodules
+
+# Branding
+patches/aether/branding/0001-app-branding-and-package-id.patch
+
+# Privacy & De-Googling Core (Phase 3)
+patches/aether/privacy/0002-degoogle-unsolicited-requests.patch
+patches/aether/privacy/0003-privacy-default-preferences.patch
+patches/aether/core/0004-search-engine-defaults.patch
+patches/aether/privacy/0005-remove-android-google-entrypoints.patch
+patches/aether/privacy/0006-anonymize-cws-extension-requests.patch
+
+# Extensions Runtime & Manifest V2 Support (Phase 4)
+patches/aether/extensions/0007-desktop-android-runtime-and-process-priority.patch
+patches/aether/extensions/0008-mv2-support-and-deprecation-bypass.patch
+patches/aether/extensions/0009-cws-mobile-install-support.patch
+patches/aether/extensions/0010-off-store-and-saf-unpacked-install.patch
+patches/aether/extensions/0011-mobile-extension-ui-and-popups.patch
+
+# Built-in uBlock Origin (Phase 5)
+patches/aether/ublock/0012-register-builtin-ublock-component.patch
+patches/aether/ublock/0013-ublock-mobile-ui-and-touch-actions.patch
+patches/aether/ublock/0014-ublock-filter-updates-and-privacy-settings.patch

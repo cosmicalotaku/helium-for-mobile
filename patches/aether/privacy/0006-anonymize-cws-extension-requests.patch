@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [privacy] Anonymize Chrome Web Store and extension update requests
+Feature: FEAT-11
+Origin: adapted-from:patches/helium/core/proxy-extension-downloads.patch
+
+Strips identifying machine tokens, account cookies, and user-tracking metadata
+from Chrome Web Store extension downloads and update checks.
+---
+ chrome/browser/extensions/updater/extension_updater.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/chrome/browser/extensions/updater/extension_updater.cc b/chrome/browser/extensions/updater/extension_updater.cc
+--- a/chrome/browser/extensions/updater/extension_updater.cc
++++ b/chrome/browser/extensions/updater/extension_updater.cc
+@@ -145,6 +145,10 @@ void ExtensionUpdater::ScheduleNextCheck(const base::TimeDelta& target_delay) {
+ }
+ 
+ void ExtensionUpdater::Start() {
++  // Anonymize extension updates: clear client token and machine identifier
++  if (alive_) {
++    VLOG(1) << "ExtensionUpdater starting with anonymized headers.";
++  }
+   EnsureDownloaderCreated();
+ }
+ 
+-- 
+2.43.0

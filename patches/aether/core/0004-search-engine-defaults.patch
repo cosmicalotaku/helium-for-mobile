@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [core] Set DuckDuckGo as default search engine and trim Omnibox Google actions
+Feature: FEAT-19, FEAT-01
+Origin: adapted-from:patches/helium/core/search/engine-defaults.patch
+
+Changes the default fallback search engine from Google to DuckDuckGo and removes
+Google promotional action pedals from the Omnibox.
+---
+ components/search_engines/template_url_prepopulate_data.cc | 2 +-
+ chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc  | 10 ----------
+ 2 files changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/components/search_engines/template_url_prepopulate_data.cc b/components/search_engines/template_url_prepopulate_data.cc
+--- a/components/search_engines/template_url_prepopulate_data.cc
++++ b/components/search_engines/template_url_prepopulate_data.cc
+@@ -318,7 +318,7 @@ std::unique_ptr<TemplateURLData> GetPrepopulatedEngineFromFullList(
+     const std::vector<raw_ptr<const PrepopulatedEngine>>&
+         regional_prepopulated_engines) {
+   return FindPrepopulatedEngineInternal(prefs, regional_prepopulated_engines,
+-                                        google.id,
++                                        duckduckgo.id,
+                                         /*use_first_as_fallback=*/true);
+ }
+ 
+diff --git a/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc b/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
+--- a/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
++++ b/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
+@@ -2091,16 +2091,6 @@ GetPedalImplementations(OmniboxPedalProfileType profile_type,
+   add(new OmniboxPedalManageSiteSettings());
+   add(new OmniboxPedalSeeChromeTips());
+ 
+-  if (testing || BUILDFLAG(GOOGLE_CHROME_BRANDING)) {
+-    add(new OmniboxPedalCreateGoogleDoc());
+-    add(new OmniboxPedalCreateGoogleSheet());
+-    add(new OmniboxPedalCreateGoogleSlide());
+-    add(new OmniboxPedalCreateGoogleCalendarEvent());
+-    add(new OmniboxPedalCreateGoogleKeepNote());
+-    add(new OmniboxPedalManageGoogleAccount());
+-    add(new OmniboxPedalChangeGooglePassword());
+-  }
+-
+   if (otr) {
+     add(new OmniboxPedalCloseIncognitoWindows(otr_type));
+   }
+-- 
+2.43.0

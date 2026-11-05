@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ublock] Add privacy settings toggle and dashboard deep-link for filter list updates
+Feature: FEAT-09, FEAT-18
+Origin: original
+
+Exposes ad-blocking controls and automatic filter-list update toggles in
+Android Privacy Settings. Provides a direct deep-link to the uBlock Origin
+dashboard (chrome-extension://cjpalhdlnbpafiamejdnhcphjbkeiagm/dashboard.html)
+and respects user offline preferences per ADR-03.
+---
+ chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java | 22 ++++++++++++++++++++++
+ chrome/browser/ui/android/strings/android_chrome_strings.grd                             | 12 ++++++++++++
+ 2 files changed, 34 insertions(+)
+
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
+@@ -88,6 +88,28 @@ public class PrivacySettings extends PreferenceFragmentCompat {
+         Preference safeBrowsingPreference = findPreference(PREF_SAFE_BROWSING);
++
++        // Aether Ad Blocking (uBlock Origin) Preferences
++        Preference adBlockDashboardPref = findPreference("aether_adblock_dashboard");
++        if (adBlockDashboardPref != null) {
++            adBlockDashboardPref.setOnPreferenceClickListener(pref -> {
++                // Open uBlock Origin Dashboard in a dedicated tab
++                Tab tab = getActivityTabProvider().get();
++                if (tab != null) {
++                    tab.loadUrl(new LoadUrlParams("chrome-extension://cjpalhdlnbpafiamejdnhcphjbkeiagm/dashboard.html"));
++                }
++                return true;
++            });
++        }
++
++        ChromeSwitchPreference filterUpdatesPref = (ChromeSwitchPreference) findPreference("aether_filter_updates");
++        if (filterUpdatesPref != null) {
++            filterUpdatesPref.setChecked(
++                    UserPrefs.get(getProfile()).getBoolean("aether.ublock_filter_updates_enabled"));
++            filterUpdatesPref.setOnPreferenceChangeListener((pref, newValue) -> {
++                UserPrefs.get(getProfile()).setBoolean("aether.ublock_filter_updates_enabled", (Boolean) newValue);
++                return true;
++            });
++        }
+     }
+ 
+     @Override
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1035,6 +1035,18 @@
+       <message name="IDS_ABOUT_TITLE" desc="Title for About settings.">
+         About Aether
+       </message>
++      <!-- Aether Built-in uBlock Origin Settings -->
++      <message name="IDS_AETHER_ADBLOCK_TITLE" desc="Title for Ad Blocking settings.">
++        Ad Blocking (uBlock Origin)
++      </message>
++      <message name="IDS_AETHER_ADBLOCK_SUMMARY" desc="Summary for Ad Blocking settings.">
++        Pre-installed Manifest V2 protection against ads, trackers, and miners.
++      </message>
++      <message name="IDS_AETHER_FILTER_UPDATES_TITLE" desc="Title for Filter List Updates toggle.">
++        Automatic Filter List Updates
++      </message>
++      <message name="IDS_AETHER_FILTER_UPDATES_SUMMARY" desc="Summary for Filter List Updates toggle.">
++        Download decentralized filter list updates directly with anonymized headers.
++      </message>
+     </messages>
+   </release>
+ </grit>
+-- 
+2.43.0

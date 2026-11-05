@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [privacy] Remove Android-specific Google Lens and promotional entry points
+Feature: FEAT-01
+Origin: original
+
+Suppresses Google Lens search from context menus and disables promotional educational
+nags on Android surfaces.
+---
+ chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java b/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
+@@ -875,8 +875,8 @@ public class ChromeContextMenuPopulator implements ContextMenuPopulator {
+     }
+ 
+     private boolean isSearchByImageAvailable() {
+-        return !isLensEnabled() && !mItemDelegate.isIncognito()
+-                && SharedPreferencesManager.getInstance().readBoolean(ChromePreferenceKeys.SEARCH_BY_IMAGE_ENABLED, true);
++        // Suppress remote Google Lens search by image
++        return false;
+     }
+ 
+     private boolean isLensEnabled() {
+-- 
+2.43.0

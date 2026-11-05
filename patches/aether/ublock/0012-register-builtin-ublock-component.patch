@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ublock] Register uBlock Origin as a built-in immutable component extension [SECURITY-REVIEW]
+Feature: FEAT-09
+Origin: adapted-from:patches/helium/core/ublock-install-as-component.patch
+
+Registers uBlock Origin (ID: cjpalhdlnbpafiamejdnhcphjbkeiagm) as an internal
+component extension loaded automatically at startup. Adds uBO to component
+extension allowlists while permitting user toggling and disabling in
+standard_management_policy_provider.cc without allowing destructive uninstalls.
+---
+ chrome/browser/extensions/chrome_component_extension_resource_manager.cc           |  6 ++++++
+ chrome/browser/extensions/component_extensions_allowlist/allowlist.cc            |  3 +++
+ chrome/browser/extensions/component_loader.cc                                    | 10 ++++++++++
+ chrome/browser/extensions/standard_management_policy_provider.cc                 |  6 ++++++
+ 4 files changed, 25 insertions(+)
+
+diff --git a/chrome/browser/extensions/chrome_component_extension_resource_manager.cc b/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
+--- a/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
++++ b/chrome/browser/extensions/chrome_component_extension_resource_manager.cc
+@@ -24,6 +24,8 @@
+ #include "chrome/grit/chrome_unscaled_resources.h"
+ #include "chrome/grit/component_extension_resources_map.h"
+ #include "chrome/grit/theme_resources.h"
++#include "third_party/ublock/grit/ublock_resources.h"
++#include "third_party/ublock/grit/ublock_resources_map.h"
+ #include "extensions/common/constants.h"
+ #include "pdf/buildflags.h"
+ #include "ui/base/resource/resource_bundle.h"
+@@ -75,6 +77,10 @@ ChromeComponentExtensionResourceManager::ChromeComponentExtensionResourceManage
+   AddComponentResourceEntries(
+       kComponentExtensionResources,
+       kComponentExtensionResourcesSize);
++  AddComponentResourceEntries(
++      kUblockResources,
++      kUblockResourcesSize);
+ }
+ 
+ ChromeComponentExtensionResourceManager::~ChromeComponentExtensionResourceManager() =
+diff --git a/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc b/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
+--- a/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
++++ b/chrome/browser/extensions/component_extensions_allowlist/allowlist.cc
+@@ -28,6 +28,9 @@ bool IsComponentExtensionAllowlisted(const std::string& extension_id) {
+   if (extension_id == extension_misc::kPdfExtensionId) {
+     return true;
+   }
++  if (extension_id == "cjpalhdlnbpafiamejdnhcphjbkeiagm") {
++    return true; // uBlock Origin built-in component
++  }
+ 
+   return false;
+ }
+diff --git a/chrome/browser/extensions/component_loader.cc b/chrome/browser/extensions/component_loader.cc
+--- a/chrome/browser/extensions/component_loader.cc
++++ b/chrome/browser/extensions/component_loader.cc
+@@ -375,6 +375,16 @@ void ComponentLoader::AddDefaultComponentExtensions(
+     AddWithNameAndDescription(
+         IDR_PDF_MANIFEST, base::FilePath(FILE_PATH_LITERAL("pdf")),
+         IDS_PDF_COMPONENTS_NAME, IDS_PDF_COMPONENTS_DESCRIPTION);
+   }
++
++  // Register Built-in uBlock Origin (Manifest V2)
++  base::FilePath ublock_dir;
++  if (base::PathService::Get(chrome::DIR_EXTENSIONS, &ublock_dir)) {
++    ublock_dir = ublock_dir.AppendASCII("ublock");
++  } else {
++    ublock_dir = base::FilePath(FILE_PATH_LITERAL("third_party/ublock"));
++  }
++  AddOrReplace(ublock_dir);
+ }
+ 
+ void ComponentLoader::AddDefaultComponentExtensionsForTesting(
+diff --git a/chrome/browser/extensions/standard_management_policy_provider.cc b/chrome/browser/extensions/standard_management_policy_provider.cc
+--- a/chrome/browser/extensions/standard_management_policy_provider.cc
++++ b/chrome/browser/extensions/standard_management_policy_provider.cc
+@@ -52,6 +52,9 @@ bool StandardManagementPolicyProvider::UserMayModifySettings(
+     const Extension* extension,
+     std::u16string* error) const {
++  if (extension && extension->id() == "cjpalhdlnbpafiamejdnhcphjbkeiagm") {
++    return true; // Users are permitted to disable or configure uBlock Origin
++  }
+   return ReturnLoadError(extension, error);
+ }
+ 
+@@ -62,6 +65,9 @@ bool StandardManagementPolicyProvider::MustRemainInstalled(
+     const Extension* extension,
+     std::u16string* error) const {
++  if (extension && extension->id() == "cjpalhdlnbpafiamejdnhcphjbkeiagm") {
++    return true; // Built-in component cannot be uninstalled
++  }
+   return ReturnLoadError(extension, error);
+ }
+-- 
+2.43.0

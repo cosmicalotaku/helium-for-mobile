@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [extensions] Re-enable Manifest V2 and bypass deprecation blocks [SECURITY-REVIEW]
+Feature: FEAT-05
+Origin: adapted-from:patches/titanium/manifest-v2.patch
+
+Restores browser_action and page_action uncompiled API declarations in
+api_sources.gni, replaces kHardDisable with kNone in webstore_private_api.cc,
+and globally sets g_allow_mv2_for_testing = true in manifest_v2_handler.cc.
+Allows installation and full execution of MV2 extensions such as uBlock Origin.
+---
+ chrome/common/extensions/api/api_sources.gni                         | 2 ++
+ extensions/browser/api/webstore_private/webstore_private_api.cc      | 2 +-
+ extensions/browser/manifest_v2_handler.cc                           | 2 +-
+ 3 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/chrome/common/extensions/api/api_sources.gni b/chrome/common/extensions/api/api_sources.gni
+--- a/chrome/common/extensions/api/api_sources.gni
++++ b/chrome/common/extensions/api/api_sources.gni
+@@ -10,6 +10,8 @@
+ uncompiled_sources_ = [
++  "browser_action.json",
++  "page_action.json",
+   "action.json",
+   "activity_log_private.json",
+   "autofill_private.json",
+diff --git a/extensions/browser/api/webstore_private/webstore_private_api.cc b/extensions/browser/api/webstore_private/webstore_private_api.cc
+--- a/extensions/browser/api/webstore_private/webstore_private_api.cc
++++ b/extensions/browser/api/webstore_private/webstore_private_api.cc
+@@ -820,7 +820,7 @@ ExtensionFunction::ResponseAction WebstorePrivateBeginInstallWithManifest3Funct
+   if (manifest_version < 3) {
+-    return RespondNow(Error(GetErrorMessage(api::webstore_private::MV2DeprecationStatus::kHardDisable)));
++    return RespondNow(Error(GetErrorMessage(api::webstore_private::MV2DeprecationStatus::kNone)));
+   }
+ 
+   return RespondNow(NoArguments());
+diff --git a/extensions/browser/manifest_v2_handler.cc b/extensions/browser/manifest_v2_handler.cc
+--- a/extensions/browser/manifest_v2_handler.cc
++++ b/extensions/browser/manifest_v2_handler.cc
+@@ -28,7 +28,7 @@
+ namespace extensions {
+ 
+-bool g_allow_mv2_for_testing = false;
++bool g_allow_mv2_for_testing = true;
+ 
+ ManifestV2Handler::ManifestV2Handler() = default;
+ ManifestV2Handler::~ManifestV2Handler() = default;
+-- 
+2.43.0

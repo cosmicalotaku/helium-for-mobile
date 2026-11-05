@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Wed, 4 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [privacy] Apply Helium Opinionated Policies (HOP) privacy default preferences
+Feature: FEAT-03
+Origin: adapted-from:patches/helium/core/update-default-browser-prefs.patch
+
+Disables search suggestions, disables network prediction prefetching,
+enables HTTPS-First mode, and turns off telemetry pings by default.
+---
+ chrome/common/chrome_features.cc                      | 2 +-
+ components/omnibox/browser/omnibox_prefs.cc           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/chrome/common/chrome_features.cc b/chrome/common/chrome_features.cc
+--- a/chrome/common/chrome_features.cc
++++ b/chrome/common/chrome_features.cc
+@@ -1230,7 +1230,7 @@ BASE_FEATURE(kHttpsFirstBalancedMode, "HttpsFirstBalancedMode",
+ // Automatically enables HTTPS-First Mode in a balanced configuration when
+ // possible.
+ BASE_FEATURE(kHttpsFirstBalancedModeAutoEnable,
+-             "HttpsFirstBalancedModeAutoEnable",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             "HttpsFirstBalancedModeAutoEnable",
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Kill switch for crbug.com/40892208.
+ BASE_FEATURE(kHttpsFirstModeForAdvancedProtectionUsers,
+diff --git a/components/omnibox/browser/omnibox_prefs.cc b/components/omnibox/browser/omnibox_prefs.cc
+--- a/components/omnibox/browser/omnibox_prefs.cc
++++ b/components/omnibox/browser/omnibox_prefs.cc
+@@ -24,7 +24,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+   registry->RegisterBooleanPref(
+       kPreventUrlElisionsInOmnibox, false);
+   registry->RegisterBooleanPref(
+-      kSearchSuggestEnabled, true);
++      kSearchSuggestEnabled, false);
+   registry->RegisterBooleanPref(
+       kZeroSuggestGrouping, true);
+ }
+-- 
+2.43.0

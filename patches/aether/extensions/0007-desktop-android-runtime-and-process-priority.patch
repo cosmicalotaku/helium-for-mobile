@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [extensions] Enable Desktop Android extension features and elevate extension process priority
+Feature: FEAT-04
+Origin: adapted-from:patches/titanium/feature-overrides.patch
+
+Enables critical desktop Android features for extension support, including
+app menu submenus, developer tools frontend, media screen capturing, and tab
+startup persistence. Elevates background extension process importance to
+ChildProcessImportance.IMPORTANT to prevent Android LowMemoryKiller termination.
+---
+ chrome/browser/chrome_browser_field_trials.cc                                                    | 11 +++++++++++
+ content/public/android/java/src/org/chromium/content/browser/ChildProcessLauncherHelperImpl.java |  8 ++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/chrome/browser/chrome_browser_field_trials.cc b/chrome/browser/chrome_browser_field_trials.cc
+--- a/chrome/browser/chrome_browser_field_trials.cc
++++ b/chrome/browser/chrome_browser_field_trials.cc
+@@ -145,6 +145,17 @@ void ChromeBrowserFieldTrials::SetUpFieldTrials() {
+ #if BUILDFLAG(IS_DESKTOP_ANDROID)
+   feature_overrides.EnableFeature(chrome::android::kSubmenusInAppMenu);
+   feature_overrides.EnableFeature(features::kAndroidDevToolsFrontend);
++  feature_overrides.EnableFeature(kAndroidMediaPicker);
++  feature_overrides.EnableFeature(features::kUserMediaScreenCapturing);
++  feature_overrides.EnableFeature(media::kAndroidEnableBackgroundMediaCapturing);
++  feature_overrides.EnableFeature(media::kAutoPictureInPictureAndroid);
++  feature_overrides.EnableFeature(media::kContextMenuPictureInPictureAndroid);
++  feature_overrides.EnableFeature(chrome::android::kLoadAllTabsAtStartup);
++  feature_overrides.EnableFeature(chrome::android::kChromeNativeUrlOverriding);
++#endif
++
++#if BUILDFLAG(IS_DESKTOP_ANDROID)
++  // Additional Desktop Android field trial initializations
+ #endif
+ }
+ 
+diff --git a/content/public/android/java/src/org/chromium/content/browser/ChildProcessLauncherHelperImpl.java b/content/public/android/java/src/org/chromium/content/browser/ChildProcessLauncherHelperImpl.java
+--- a/content/public/android/java/src/org/chromium/content/browser/ChildProcessLauncherHelperImpl.java
++++ b/content/public/android/java/src/org/chromium/content/browser/ChildProcessLauncherHelperImpl.java
+@@ -102,6 +102,7 @@ public class ChildProcessLauncherHelperImpl {
+     private final ChildProcessConnection.ServiceCallback mServiceCallback;
+     private final boolean mDoSetupConnection;
+     private @ChildProcessImportance int mEffectiveImportance;
++    private final boolean mIsExtensionProcess;
+ 
+     private ChildProcessLauncherHelperImpl(
+         Context context,
+@@ -155,6 +156,10 @@ public class ChildProcessLauncherHelperImpl {
+         if (!ApplicationStatus.isInitialized()) return;
++        mIsExtensionProcess = Arrays.asList(commandLine).contains("--extension-process");
++        if (mIsExtensionProcess) {
++            mEffectiveImportance = ChildProcessImportance.IMPORTANT;
++        }
+     }
+ 
+     public void setPriority(ChildProcessConnection connection,
+@@ -350,6 +355,9 @@ public class ChildProcessLauncherHelperImpl {
+             @ChildProcessImportance int importance) {
++        if (mIsExtensionProcess) {
++            importance = ChildProcessImportance.IMPORTANT;
++        }
+         connection.updateGroupImportance(importance);
+     }
+ }
+-- 
+2.43.0

@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [extensions] Allow off-store extension installation and fix SAF tree URI resolution [SECURITY-REVIEW]
+Feature: FEAT-07
+Origin: adapted-from:patches/titanium/off-store-install-saf.patch
+
+Permits downloading and installing extensions from recognized add-on repositories
+(Opera Add-ons, Microsoft Edge Add-ons) and internal extension schemes in
+download_crx_util.cc. Fixes Android Storage Access Framework (SAF) tree URI
+resolution in VirtualDocumentPath.java to allow loading unpacked extensions.
+---
+ base/android/java/src/org/chromium/base/VirtualDocumentPath.java | 8 ++++++++
+ chrome/browser/download/download_crx_util.cc                     | 8 ++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/base/android/java/src/org/chromium/base/VirtualDocumentPath.java b/base/android/java/src/org/chromium/base/VirtualDocumentPath.java
+--- a/base/android/java/src/org/chromium/base/VirtualDocumentPath.java
++++ b/base/android/java/src/org/chromium/base/VirtualDocumentPath.java
+@@ -88,6 +88,14 @@ public class VirtualDocumentPath {
+         String treeId = DocumentsContract.getTreeDocumentId(tree);
+         assert treeId.equals(documentId);
++
++        if ("com.android.externalstorage.documents".equals(mAuthority)) {
++            String fastId = mRelativePath.isEmpty() ? treeId : (treeId.endsWith(":") ? treeId + mRelativePath : treeId + "/" + mRelativePath);
++            Uri fast = DocumentsContract.buildDocumentUriUsingTree(tree, fastId);
++            return contentUriExists(fast) ? fast : null;
++        }
++
+         return null;
+     }
+diff --git a/chrome/browser/download/download_crx_util.cc b/chrome/browser/download/download_crx_util.cc
+--- a/chrome/browser/download/download_crx_util.cc
++++ b/chrome/browser/download/download_crx_util.cc
+@@ -108,6 +108,14 @@ bool OffStoreInstallAllowedByPrefs(Profile* profile,
+                                    const download::DownloadItem& item) {
++  if (const auto& o = item.GetRequestInitiator(); o && o->scheme() == "chrome-extension") {
++    return true;
++  }
++  for (const char* d : {"addons.opera.com", "operacdn.com", "microsoftedge.microsoft.com", "edge.microsoft.com", "delivery.mp.microsoft.com"}) {
++    if (item.GetURL().DomainIs(d) || item.GetReferrerUrl().DomainIs(d)) {
++      return true;
++    }
++  }
+   if (g_allow_offstore_install_for_testing)
+     return true;
+ 
+-- 
+2.43.0

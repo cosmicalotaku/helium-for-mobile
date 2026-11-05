@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [extensions] Auto-enable desktop site scope for Chrome Web Store to allow mobile installation
+Feature: FEAT-06
+Origin: adapted-from:patches/titanium/webstore-mobile-fix.patch
+
+Enables ContentSetting.ALLOW for ContentSettingsType.REQUEST_DESKTOP_SITE on
+[*.]chromewebstore.google.com automatically on profile initialization.
+Ensures the "Add to Chrome" button renders and functions on mobile form factors
+without requiring users to manually toggle desktop site mode.
+---
+ chrome/browser/ui/android/desktop_site/java/src/org/chromium/chrome/browser/desktop_site/DesktopSiteUtils.java | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/chrome/browser/ui/android/desktop_site/java/src/org/chromium/chrome/browser/desktop_site/DesktopSiteUtils.java b/chrome/browser/ui/android/desktop_site/java/src/org/chromium/chrome/browser/desktop_site/DesktopSiteUtils.java
+--- a/chrome/browser/ui/android/desktop_site/java/src/org/chromium/chrome/browser/desktop_site/DesktopSiteUtils.java
++++ b/chrome/browser/ui/android/desktop_site/java/src/org/chromium/chrome/browser/desktop_site/DesktopSiteUtils.java
+@@ -85,6 +85,12 @@ public class DesktopSiteUtils {
+      */
+     public static void maybeDefaultEnableWindowSetting(Activity activity, Profile profile) {
++        WebsitePreferenceBridge.setContentSettingCustomScope(
++                profile,
++                ContentSettingsType.REQUEST_DESKTOP_SITE,
++                "[*.]chromewebstore.google.com",
++                SITE_WILDCARD,
++                ContentSetting.ALLOW);
+         if (profile.isOffTheRecord()) {
+             return;
+         }
+-- 
+2.43.0

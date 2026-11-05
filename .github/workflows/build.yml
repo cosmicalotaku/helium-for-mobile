@@ -1,0 +1,68 @@
+name: Build Aether Browser
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Runner environment (self-hosted or ubuntu-latest)'
+        required: true
+        type: string
+        default: 'self-hosted'
+  schedule:
+    # Monthly automated build trigger
+    - cron: '0 0 1 * *'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup build environment
+        run: |
+          chmod +x *.sh
+          echo "UNIX_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Execute Build & Packaging
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          LOCAL_TEST_JKS: ${{ secrets.LOCAL_TEST_JKS }}
+          STORE_TEST_JKS: ${{ secrets.STORE_TEST_JKS }}
+        run: |
+          ./build.sh
+
+      - name: Prepare Artifacts for Release
+        run: |
+          export VERSION=$(find chromium/src/out/release -name '*arm64-v8a.apk' | sed 's/.*\///;s/\-arm64-v8a.apk$//' | sed 's/^aether-//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          mv $(find chromium/src/out/release -name '*arm64-v8a.apk') aether-${VERSION}-${{ env.UNIX_TIME }}-arm64-v8a.apk
+          if compgen -G "chromium/src/out/release/*arm64-v8a.aab" > /dev/null; then
+            mv $(find chromium/src/out/release -name '*arm64-v8a.aab') aether-${VERSION}-${{ env.UNIX_TIME }}-arm64-v8a.aab
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Aether Browser v${{ env.VERSION }}
+          tag_name: v${{ env.VERSION }}
+          files: |
+            aether-${{ env.VERSION }}-${{ env.UNIX_TIME }}-arm64-v8a.apk
+            aether-${{ env.VERSION }}-${{ env.UNIX_TIME }}-arm64-v8a.aab
+
+      - name: Generate Build Attestation (SLSA Provenance)
+        uses: actions/attest-build-provenance@v2
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        with:
+          subject-path: |
+            aether-${{ env.VERSION }}-${{ env.UNIX_TIME }}-arm64-v8a.apk
+            aether-${{ env.VERSION }}-${{ env.UNIX_TIME }}-arm64-v8a.aab

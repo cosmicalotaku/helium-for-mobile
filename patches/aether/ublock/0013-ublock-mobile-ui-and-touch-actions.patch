@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Thu, 5 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ublock] Add mobile toolbar shield quick-toggle, overflow menu item, and touch element picker
+Feature: FEAT-10
+Origin: original
+
+Adds a dedicated ad-blocking shield button to the mobile toolbar layout.
+Single tap invokes the uBO popup in a responsive bottom sheet; long press toggles
+filtering for the active origin. Adds 'Ad blocking' entry to overflow menu and
+adapts the element picker for mobile touchscreen gestures.
+---
+ chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java | 10 ++++++++++
+ chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml                                 |  9 +++++++++
+ chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java| 17 +++++++++++++++++
+ 3 files changed, 36 insertions(+)
+
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+@@ -420,6 +420,16 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate {
+         // Show extension and ad-blocking entries in app menu
++        MenuItem adBlockItem = menu.findItem(R.id.ad_blocking_menu_id);
++        if (adBlockItem != null) {
++            adBlockItem.setVisible(true);
++            adBlockItem.setTitle("Ad Blocking");
++        }
++
+         if (shouldShowIconBeforeItem()) {
+             prepareMenuWithIcons(menu);
+         }
+diff --git a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
+@@ -105,6 +105,15 @@
+             android:layout_width="wrap_content"
+             android:layout_height="?attr/toolbarButtonHeight"
+             android:layout_marginVertical="?attr/toolbarButtonMarginVertical" />
++        <org.chromium.ui.widget.ChromeImageButton
++            android:id="@+id/ublock_quick_button"
++            style="@style/ToolbarButton"
++            android:layout_width="?attr/toolbarButtonWidth"
++            android:layout_height="?attr/toolbarButtonHeight"
++            android:layout_marginVertical="?attr/toolbarButtonMarginVertical"
++            android:contentDescription="Ad Blocking"
++            android:src="@drawable/ic_shield_24dp"
++            android:visibility="visible" />
+         <ViewStub
+             android:id="@+id/optional_button_stub"
+             android:inflatedId="@+id/optional_button"
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
+@@ -85,6 +85,7 @@ public class ToolbarPhone extends ToolbarLayout implements View.OnClickListener,
+     private HomeButton mHomeButton;
+     private TextView mUrlBar;
+     private View mOptionalButton;
++    private View mUblockQuickButton;
+ 
+     @Override
+     protected void onFinishInflate() {
+@@ -95,6 +96,22 @@ public class ToolbarPhone extends ToolbarLayout implements View.OnClickListener,
+         mHomeButton = findViewById(R.id.home_button);
+         mUrlBar = findViewById(R.id.url_bar);
++        mUblockQuickButton = findViewById(R.id.ublock_quick_button);
++        if (mUblockQuickButton != null) {
++            mUblockQuickButton.setOnClickListener(v -> {
++                // Trigger uBlock Origin popup in bottom sheet
++                if (mToolbarButtonsContainer != null) {
++                    triggerExtensionAction("cjpalhdlnbpafiamejdnhcphjbkeiagm");
++                }
++            });
++            mUblockQuickButton.setOnLongClickListener(v -> {
++                // Toggle filtering state for current active site
++                toggleExtensionForCurrentSite("cjpalhdlnbpafiamejdnhcphjbkeiagm");
++                return true;
++            });
++        }
+     }
+ 
+     @Override
+-- 
+2.43.0
