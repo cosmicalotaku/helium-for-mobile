@@ -22,3 +22,10 @@ patches/aether/extensions/0011-mobile-extension-ui-and-popups.patch
 patches/aether/ublock/0012-register-builtin-ublock-component.patch
 patches/aether/ublock/0013-ublock-mobile-ui-and-touch-actions.patch
 patches/aether/ublock/0014-ublock-filter-updates-and-privacy-settings.patch
+
+# Helium-Feel UI & Customization (Phase 6)
+patches/aether/ui/0015-compact-and-customizable-toolbar.patch
+patches/aether/ui/0016-clean-overflow-and-context-menus.patch
+patches/aether/ui/0017-minimalist-clean-new-tab-page.patch
+patches/aether/ui/0018-amoled-pure-black-and-accent-theming.patch
+patches/aether/settings/0019-aether-services-and-flat-settings.patch

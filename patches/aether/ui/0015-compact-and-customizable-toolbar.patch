@@ -1,0 +1,290 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Fri, 6 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ui] Implement compact 48dp toolbar layout and user-customizable button layout
+Feature: FEAT-12, FEAT-13
+Origin: original
+
+Reduces vertical toolbar height from 56/64dp to 48dp to maximize reading space
+on tall mobile displays. Tightens padding, shrinks action button targets to 40dp,
+and implements a dedicated 'Customize Toolbar' settings screen allowing users to
+toggle visibility of the uBO shield, extensions container, home, share, and
+new-tab buttons dynamically.
+---
+ chrome/android/java/res/xml/main_preferences.xml                                                  |  6 +++
+ chrome/android/java/res/xml/toolbar_customization_preferences.xml                                 | 42 +++++++++++++++++
+ chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java                    |  5 +++
+ chrome/android/java/src/org/chromium/chrome/browser/settings/ToolbarCustomizationSettings.java    | 24 ++++++++++
+ chrome/browser/ui/android/strings/android_chrome_strings.grd                                       | 48 ++++++++++++++++++++
+ chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml                                | 18 ++++++++
+ chrome/browser/ui/android/toolbar/java/res/values/dimens.xml                                      | 12 ++---
+ chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java | 36 +++++++++++++++
+ 8 files changed, 185 insertions(+), 6 deletions(-)
+ create mode 100644 chrome/android/java/res/xml/toolbar_customization_preferences.xml
+ create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/settings/ToolbarCustomizationSettings.java
+
+diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
+--- a/chrome/android/java/res/xml/main_preferences.xml
++++ b/chrome/android/java/res/xml/main_preferences.xml
+@@ -75,6 +75,12 @@
+             android:title="@string/theme_settings"
+             android:fragment="org.chromium.chrome.browser.night_mode.settings.ThemeSettingsFragment" />
+ 
++        <Preference
++            android:key="toolbar_customization"
++            android:title="@string/toolbar_customization_title"
++            android:summary="@string/toolbar_customization_summary"
++            android:fragment="org.chromium.chrome.browser.settings.ToolbarCustomizationSettings" />
++
+         <Preference
+             android:key="homepage"
+             android:title="@string/options_homepage_title"
+diff --git a/chrome/android/java/res/xml/toolbar_customization_preferences.xml b/chrome/android/java/res/xml/toolbar_customization_preferences.xml
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/res/xml/toolbar_customization_preferences.xml
+@@ -0,0 +1,42 @@
++<?xml version="1.0" encoding="utf-8"?>
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto">
++
++    <PreferenceCategory
++        android:title="@string/toolbar_buttons_category">
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_toolbar_show_ublock"
++            android:title="@string/toolbar_show_ublock_title"
++            android:summary="@string/toolbar_show_ublock_summary"
++            android:defaultValue="true" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_toolbar_show_extensions"
++            android:title="@string/toolbar_show_extensions_title"
++            android:summary="@string/toolbar_show_extensions_summary"
++            android:defaultValue="true" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_toolbar_show_home"
++            android:title="@string/toolbar_show_home_title"
++            android:summary="@string/toolbar_show_home_summary"
++            android:defaultValue="false" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_toolbar_show_share"
++            android:title="@string/toolbar_show_share_title"
++            android:summary="@string/toolbar_show_share_summary"
++            android:defaultValue="false" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_toolbar_show_new_tab"
++            android:title="@string/toolbar_show_new_tab_title"
++            android:summary="@string/toolbar_show_new_tab_summary"
++            android:defaultValue="false" />
++
++    </PreferenceCategory>
++
++</PreferenceScreen>
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
+@@ -115,6 +115,11 @@ public class MainSettings extends PreferenceFragmentCompat {
+         if (themePref != null) {
+             themePref.setVisible(NightModeUtils.isThemeSettingAvailable());
+         }
++
++        Preference toolbarCustomizationPref = findPreference("toolbar_customization");
++        if (toolbarCustomizationPref != null) {
++            toolbarCustomizationPref.setVisible(true);
++        }
+     }
+ 
+     @Override
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/ToolbarCustomizationSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/ToolbarCustomizationSettings.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/ToolbarCustomizationSettings.java
+@@ -0,0 +1,24 @@
++package org.chromium.chrome.browser.settings;
++
++import android.os.Bundle;
++import androidx.preference.PreferenceFragmentCompat;
++import org.chromium.chrome.R;
++import org.chromium.components.browser_ui.settings.ChromeSwitchPreference;
++
++/**
++ * Fragment for configuring visible shortcut buttons in the mobile toolbar.
++ */
++public class ToolbarCustomizationSettings extends PreferenceFragmentCompat {
++    public static final String PREF_TOOLBAR_UBLOCK = "aether_toolbar_show_ublock";
++    public static final String PREF_TOOLBAR_EXTENSIONS = "aether_toolbar_show_extensions";
++    public static final String PREF_TOOLBAR_HOME = "aether_toolbar_show_home";
++    public static final String PREF_TOOLBAR_SHARE = "aether_toolbar_show_share";
++    public static final String PREF_TOOLBAR_NEW_TAB = "aether_toolbar_show_new_tab";
++
++    @Override
++    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
++        setPreferencesFromResource(R.xml.toolbar_customization_preferences, rootKey);
++        getActivity().setTitle(R.string.toolbar_customization_title);
++    }
++}
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1047,6 +1047,54 @@
+       <message name="IDS_AETHER_FILTER_UPDATES_SUMMARY" desc="Summary for Filter List Updates toggle.">
+         Download decentralized filter list updates directly with anonymized headers.
+       </message>
++      <!-- Aether Toolbar Customization Settings -->
++      <message name="IDS_TOOLBAR_CUSTOMIZATION_TITLE" desc="Title for toolbar customization settings.">
++        Customize Toolbar
++      </message>
++      <message name="IDS_TOOLBAR_CUSTOMIZATION_SUMMARY" desc="Summary for toolbar customization settings.">
++        Choose which buttons appear on the browser toolbar
++      </message>
++      <message name="IDS_TOOLBAR_BUTTONS_CATEGORY" desc="Category header for toolbar buttons.">
++        Visible Buttons
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_UBLOCK_TITLE" desc="Title for uBO shield button toggle.">
++        Ad Blocking Shield
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_UBLOCK_SUMMARY" desc="Summary for uBO shield button toggle.">
++        Quick 1-tap ad-blocking controls and site whitelisting
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_EXTENSIONS_TITLE" desc="Title for extensions toolbar button toggle.">
++        Extensions Button
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_EXTENSIONS_SUMMARY" desc="Summary for extensions toolbar button toggle.">
++        Direct access to installed extensions and active popups
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_HOME_TITLE" desc="Title for home button toggle.">
++        Home Button
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_HOME_SUMMARY" desc="Summary for home button toggle.">
++        Open your designated homepage
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_SHARE_TITLE" desc="Title for share button toggle.">
++        Share Button
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_SHARE_SUMMARY" desc="Summary for share button toggle.">
++        Quickly share the current web page
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_NEW_TAB_TITLE" desc="Title for new tab button toggle.">
++        New Tab Button
++      </message>
++      <message name="IDS_TOOLBAR_SHOW_NEW_TAB_SUMMARY" desc="Summary for new tab button toggle.">
++        Open a new blank tab
++      </message>
+     </messages>
+   </release>
+ </grit>
+diff --git a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_phone.xml
+@@ -114,6 +114,24 @@
+             android:layout_height="?attr/toolbarButtonHeight"
+             android:layout_marginVertical="?attr/toolbarButtonMarginVertical" />
+ 
++        <org.chromium.ui.widget.ChromeImageButton
++            android:id="@+id/share_button"
++            style="@style/ToolbarButton"
++            android:layout_width="?attr/toolbarButtonWidth"
++            android:layout_height="?attr/toolbarButtonHeight"
++            android:layout_marginVertical="?attr/toolbarButtonMarginVertical"
++            android:contentDescription="Share"
++            android:src="@drawable/ic_share_white_24dp"
++            android:visibility="gone" />
++        <org.chromium.ui.widget.ChromeImageButton
++            android:id="@+id/new_tab_button"
++            style="@style/ToolbarButton"
++            android:layout_width="?attr/toolbarButtonWidth"
++            android:layout_height="?attr/toolbarButtonHeight"
++            android:layout_marginVertical="?attr/toolbarButtonMarginVertical"
++            android:contentDescription="New tab"
++            android:src="@drawable/ic_add"
++            android:visibility="gone" />
+         <org.chromium.chrome.browser.toolbar.top.ToggleTabStackButton
+             android:id="@+id/tab_switcher_button"
+             style="@style/ToolbarButton"
+diff --git a/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml b/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
+@@ -12,12 +12,12 @@
+     <!-- Toolbar dimensions -->
+-    <dimen name="toolbar_height_no_shadow">56dp</dimen>
++    <dimen name="toolbar_height_no_shadow">48dp</dimen>
+-    <dimen name="toolbar_button_width">48dp</dimen>
++    <dimen name="toolbar_button_width">40dp</dimen>
+-    <dimen name="toolbar_button_height">48dp</dimen>
++    <dimen name="toolbar_button_height">40dp</dimen>
+-    <dimen name="toolbar_url_bar_min_height">44dp</dimen>
++    <dimen name="toolbar_url_bar_min_height">36dp</dimen>
+-    <dimen name="toolbar_edge_padding">8dp</dimen>
++    <dimen name="toolbar_edge_padding">4dp</dimen>
+-    <dimen name="toolbar_url_bar_corner_radius">24dp</dimen>
++    <dimen name="toolbar_url_bar_corner_radius">18dp</dimen>
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarPhone.java
+@@ -25,6 +25,8 @@ import android.view.View;
+ import android.view.ViewGroup;
+ import android.widget.FrameLayout;
+ import android.widget.TextView;
++import android.content.SharedPreferences;
++import org.chromium.base.ContextUtils;
+ 
+ import androidx.annotation.Nullable;
+ 
+@@ -87,6 +89,8 @@ public class ToolbarPhone extends ToolbarLayout implements View.OnClickListener,
+     private TextView mUrlBar;
+     private View mOptionalButton;
+     private View mUblockQuickButton;
++    private View mShareButton;
++    private View mNewTabButton;
+ 
+     @Override
+     protected void onFinishInflate() {
+@@ -112,6 +116,38 @@ public class ToolbarPhone extends ToolbarLayout implements View.OnClickListener,
+                 return true;
+             });
+         }
++        mShareButton = findViewById(R.id.share_button);
++        mNewTabButton = findViewById(R.id.new_tab_button);
++        if (mNewTabButton != null) {
++            mNewTabButton.setOnClickListener(v -> {
++                if (getToolbarTabController() != null) {
++                    getToolbarTabController().openNewTab();
++                }
++            });
++        }
++        updateCustomToolbarButtons();
++    }
++
++    public void updateCustomToolbarButtons() {
++        SharedPreferences prefs = ContextUtils.getAppSharedPreferences();
++        boolean showUblock = prefs.getBoolean("aether_toolbar_show_ublock", true);
++        boolean showExtensions = prefs.getBoolean("aether_toolbar_show_extensions", true);
++        boolean showHome = prefs.getBoolean("aether_toolbar_show_home", false);
++        boolean showShare = prefs.getBoolean("aether_toolbar_show_share", false);
++        boolean showNewTab = prefs.getBoolean("aether_toolbar_show_new_tab", false);
++
++        if (mUblockQuickButton != null) {
++            mUblockQuickButton.setVisibility(showUblock ? View.VISIBLE : View.GONE);
++        }
++        View extContainer = findViewById(R.id.extensions_toolbar_container);
++        if (extContainer != null) {
++            extContainer.setVisibility(showExtensions ? View.VISIBLE : View.GONE);
++        }
++        if (mHomeButton != null) {
++            mHomeButton.setVisibility(showHome ? View.VISIBLE : View.GONE);
++        }
++        if (mShareButton != null) {
++            mShareButton.setVisibility(showShare ? View.VISIBLE : View.GONE);
++        }
++        if (mNewTabButton != null) {
++            mNewTabButton.setVisibility(showNewTab ? View.VISIBLE : View.GONE);
++        }
+     }
+ 
+     @Override
+-- 
+2.43.0

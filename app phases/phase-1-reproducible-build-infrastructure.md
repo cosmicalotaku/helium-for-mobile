@@ -120,6 +120,6 @@ Set up an automated, reproducible build pipeline capable of compiling the clean 
 
 ## 5. Exit Criteria
 
-- [ ] Clean build runs from scratch twice in a row in CI and succeeds without error.
-- [ ] Signed APK installs cleanly on an emulator and a physical Android device alongside stock Chrome.
-- [ ] App launches, can browse websites, and displays `{{APP_NAME}}` in the "About" screen.
+- [x] Clean build runs from scratch twice in a row in CI and succeeds without error.
+- [x] Signed APK installs cleanly on an emulator and a physical Android device alongside stock Chrome.
+- [x] App launches, can browse websites, and displays `Aether` in the "About" screen.

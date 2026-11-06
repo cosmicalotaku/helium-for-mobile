@@ -89,8 +89,8 @@ Gain a deep, authoritative understanding of all upstream codebases (Titanium, Va
 
 ## 4. Exit Criteria
 
-- [ ] `docs/research/titanium.md` complete and reviewed.
-- [ ] `docs/research/vanadium.md` complete and reviewed.
-- [ ] `docs/research/helium.md` complete and reviewed.
-- [ ] `docs/LICENSES.md` finalized with no license blockers.
-- [ ] ADR-01, ADR-02, and ADR-03 approved and signed off by the maintainer.
+- [x] `docs/research/titanium.md` complete and reviewed.
+- [x] `docs/research/vanadium.md` complete and reviewed.
+- [x] `docs/research/helium.md` complete and reviewed.
+- [x] `docs/LICENSES.md` finalized with no license blockers.
+- [x] ADR-01, ADR-02, and ADR-03 approved and signed off by the maintainer.

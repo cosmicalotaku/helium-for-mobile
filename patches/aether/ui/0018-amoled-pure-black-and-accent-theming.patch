@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Fri, 6 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ui] Implement Pure Black AMOLED dark theme and custom accent palettes
+Feature: FEAT-17
+Origin: original
+
+Adds true #000000 AMOLED pure black theme option to theme settings, providing
+deep contrast and OLED battery savings. Colors toolbar and top UI backgrounds
+with pure black surfaces and introduces Helium Amber accent tinting.
+---
+ chrome/android/java/src/org/chromium/chrome/browser/night_mode/settings/ThemeSettingsFragment.java | 14 ++++++++++++++
+ chrome/android/java/src/org/chromium/chrome/browser/theme/ThemeUtils.java                          | 18 ++++++++++++++++++
+ chrome/browser/ui/android/strings/android_chrome_strings.grd                                       |  6 ++++++
+ components/browser_ui/styles/android/java/res/values-night/colors.xml                            |  8 ++++++++
+ 4 files changed, 46 insertions(+)
+
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/night_mode/settings/ThemeSettingsFragment.java b/chrome/android/java/src/org/chromium/chrome/browser/night_mode/settings/ThemeSettingsFragment.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/night_mode/settings/ThemeSettingsFragment.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/night_mode/settings/ThemeSettingsFragment.java
+@@ -45,6 +45,20 @@ public class ThemeSettingsFragment extends PreferenceFragmentCompat {
+         setPreferencesFromResource(R.xml.theme_preferences, rootKey);
++
++        // Add AMOLED option
++        RadioButtonWithDescriptionPreference amoledPref =
++                new RadioButtonWithDescriptionPreference(getPreferenceManager().getContext(), null);
++        amoledPref.setKey("theme_amoled");
++        amoledPref.setTitle(R.string.theme_amoled_title);
++        amoledPref.setSummary(R.string.theme_amoled_summary);
++        PreferenceGroup group = (PreferenceGroup) findPreference("theme_radio_group");
++        if (group != null) {
++            group.addPreference(amoledPref);
++        }
+     }
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/theme/ThemeUtils.java b/chrome/android/java/src/org/chromium/chrome/browser/theme/ThemeUtils.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/theme/ThemeUtils.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/theme/ThemeUtils.java
+@@ -85,6 +85,24 @@ public class ThemeUtils {
+     public static int getToolbarBackgroundColor(Context context, boolean isIncognito) {
+         if (isIncognito) {
+             return Color.BLACK;
+         }
++
++        // Check if user selected AMOLED pure black
++        boolean isAmoled = ContextUtils.getAppSharedPreferences().getBoolean("aether_theme_amoled_enabled", true);
++        if (isAmoled && isNightMode(context)) {
++            return Color.BLACK; // #000000
++        }
++
+         return SemanticColorUtils.getToolbarBackground(context);
+     }
++
++    private static boolean isNightMode(Context context) {
++        int nightModeFlags = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
++        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
++    }
+ 
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1101,6 +1101,12 @@
+       <message name="IDS_MENU_COPY_URL" desc="Menu item to copy the current page URL to clipboard.">
+         Copy link
+       </message>
++      <!-- AMOLED Theme Strings -->
++      <message name="IDS_THEME_AMOLED_TITLE" desc="Title for AMOLED pure black theme.">
++        Pure Black (AMOLED)
++      </message>
++      <message name="IDS_THEME_AMOLED_SUMMARY" desc="Summary for AMOLED pure black theme.">
++        Maximum battery savings on OLED screens with true #000000 pitch black surfaces.
++      </message>
+     </messages>
+   </release>
+ </grit>
+diff --git a/components/browser_ui/styles/android/java/res/values-night/colors.xml b/components/browser_ui/styles/android/java/res/values-night/colors.xml
+--- a/components/browser_ui/styles/android/java/res/values-night/colors.xml
++++ b/components/browser_ui/styles/android/java/res/values-night/colors.xml
+@@ -10,6 +10,14 @@
+     <color name="default_bg_color_baseline">@color/color_primary_with_alpha_10_dark</color>
++
++    <!-- Aether AMOLED & Accent colors -->
++    <color name="color_amoled_surface">#000000</color>
++    <color name="color_amoled_container">#121212</color>
++    <color name="color_helium_amber">#F59E0B</color>
++    <color name="color_neon_cyan">#06B6D4</color>
++    <color name="color_deep_violet">#8B5CF6</color>
++    <color name="color_emerald_green">#10B981</color>
+ </resources>
+-- 
+2.43.0

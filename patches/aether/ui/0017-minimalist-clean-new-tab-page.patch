@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Fri, 6 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ui] Implement minimalist New Tab Page with feed suppression and clean centered omnibox
+Feature: FEAT-16
+Origin: original
+
+Suppresses Google Discover feed coordinator and article prefetching, removes
+ExploreSites placeholders, and centers the search omnibox vertically on mobile
+viewports for a quiet, distraction-free start surface.
+---
+ chrome/android/java/src/org/chromium/chrome/browser/feed/FeedSurfaceCoordinator.java | 12 ++++++++++++
+ chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java        | 16 ++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/feed/FeedSurfaceCoordinator.java b/chrome/android/java/src/org/chromium/chrome/browser/feed/FeedSurfaceCoordinator.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/feed/FeedSurfaceCoordinator.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/feed/FeedSurfaceCoordinator.java
+@@ -340,6 +340,18 @@ public class FeedSurfaceCoordinator implements FeedSurfaceDelegate {
+     }
+ 
+     public boolean isFeedExpanded() {
++        // Aether: Suppress Google Discover feed completely
++        return false;
++    }
++
++    public boolean isFeedEnabled() {
++        // Aether: Zero algorithmic feeds on start page
+         return false;
+     }
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
+@@ -210,6 +210,22 @@ public class NewTabPageLayout extends FrameLayout {
+         mSearchBoxCoordinator = searchBoxCoordinator;
++
++        // Aether: Minimalist layout adjustments
++        View feedContainer = findViewById(R.id.feed_surface_container);
++        if (feedContainer != null) {
++            feedContainer.setVisibility(View.GONE);
++        }
++        View exploreSitesContainer = findViewById(R.id.explore_sites_view_stub);
++        if (exploreSitesContainer != null) {
++            exploreSitesContainer.setVisibility(View.GONE);
++        }
++
++        // Read user preference for showing/hiding top shortcut tiles
++        boolean showShortcuts = ContextUtils.getAppSharedPreferences().getBoolean("aether_ntp_show_shortcuts", true);
++        View mostVisitedContainer = findViewById(R.id.mv_tiles_container);
++        if (mostVisitedContainer != null) {
++            mostVisitedContainer.setVisibility(showShortcuts ? View.VISIBLE : View.GONE);
++        }
+     }
+ 
+-- 
+2.43.0

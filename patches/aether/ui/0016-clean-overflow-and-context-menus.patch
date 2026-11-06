@@ -1,0 +1,102 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Fri, 6 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [ui] Simplify 3-dot overflow menu and context menus, eliminating promotional noise
+Feature: FEAT-14, FEAT-15
+Origin: original
+
+Trims Google account sign-in banners, Help & feedback, and sync promos from
+the main 3-dot overflow menu. Adds direct Copy Link action, ensures Extensions
+and Ad Blocking items are clearly surfaced, and simplifies long-press context
+menus to remove tab-group nesting and reading list clutter.
+---
+ chrome/android/java/res/menu/main_menu.xml                                                          | 12 +++++++++++-
+ chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java | 18 ++++++++++++++++++
+ chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java     |  8 ++++++++
+ chrome/browser/ui/android/strings/android_chrome_strings.grd                                       |  6 ++++++
+ 4 files changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/chrome/android/java/res/menu/main_menu.xml b/chrome/android/java/res/menu/main_menu.xml
+--- a/chrome/android/java/res/menu/main_menu.xml
++++ b/chrome/android/java/res/menu/main_menu.xml
+@@ -102,6 +102,12 @@
+             android:title="@string/menu_share_page"
+             android:icon="@drawable/ic_share_white_24dp" />
+ 
++        <item
++            android:id="@+id/copy_url_menu_id"
++            android:title="@string/menu_copy_url"
++            android:icon="@drawable/ic_content_copy_24dp"
++            android:orderInCategory="10" />
++
+         <item
+             android:id="@+id/find_in_page_id"
+             android:title="@string/menu_find_in_page"
+@@ -120,6 +126,10 @@
+             android:id="@+id/preferences_id"
+             android:title="@string/menu_settings"
+             android:icon="@drawable/settings_cog" />
+-        <item
+-            android:id="@+id/help_id"
+-            android:title="@string/menu_help"
+-            android:icon="@drawable/ic_help_24dp" />
+     </group>
+ </menu>
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/appmenu/AppMenuPropertiesDelegateImpl.java
+@@ -430,6 +430,24 @@ public class AppMenuPropertiesDelegateImpl implements AppMenuPropertiesDelegate {
+             adBlockItem.setTitle("Ad Blocking");
+         }
+ 
++        // Suppress Google promos and help item in Helium style
++        MenuItem helpItem = menu.findItem(R.id.help_id);
++        if (helpItem != null) {
++            helpItem.setVisible(false);
++        }
++        MenuItem signinPromoItem = menu.findItem(R.id.signin_promo_menu_id);
++        if (signinPromoItem != null) {
++            signinPromoItem.setVisible(false);
++        }
++
++        // Enable direct Copy URL action
++        MenuItem copyUrlItem = menu.findItem(R.id.copy_url_menu_id);
++        if (copyUrlItem != null) {
++            Tab currentTab = mActivityTabProvider.get();
++            copyUrlItem.setVisible(currentTab != null && !currentTab.isNativePage());
++        }
++
+         if (shouldShowIconBeforeItem()) {
+             prepareMenuWithIcons(menu);
+         }
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java b/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/ChromeContextMenuPopulator.java
+@@ -485,6 +485,14 @@ public class ChromeContextMenuPopulator implements ContextMenuPopulator {
+         if (mItemDelegate.isIncognito()) {
+             groupedItems.remove(Item.OPEN_IN_INCOGNITO_TAB);
+         }
++
++        // Helium style: strip extraneous tab-grouping and reading list clutter
++        groupedItems.remove(Item.OPEN_IN_NEW_TAB_GROUP);
++        groupedItems.remove(Item.READ_LATER);
++
+         return groupedItems;
+     }
+ 
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1095,6 +1095,12 @@
+       <message name="IDS_TOOLBAR_SHOW_NEW_TAB_SUMMARY" desc="Summary for new tab button toggle.">
+         Open a new blank tab
+       </message>
++      <!-- Clean Menu Strings -->
++      <message name="IDS_MENU_COPY_URL" desc="Menu item to copy the current page URL to clipboard.">
++        Copy link
++      </message>
+     </messages>
+   </release>
+ </grit>
+-- 
+2.43.0

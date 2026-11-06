@@ -87,7 +87,7 @@ Eliminate all Google tracking, unsolicited network pings, account sign-in prompt
 
 ## 5. Exit Criteria
 
-- [ ] App launches and idles without generating any unexpected network packets.
-- [ ] No Google sign-in prompts, Discover feeds, or Lens promos appear in the UI.
-- [ ] Privacy leak tests (WebRTC IP leak, DNS leak) pass cleanly.
-- [ ] `docs/NETWORK_ENDPOINTS.md` accurately accounts for 100% of outbound connections.
+- [x] App launches and idles without generating any unexpected network packets.
+- [x] No Google sign-in prompts, Discover feeds, or Lens promos appear in the UI.
+- [x] Privacy leak tests (WebRTC IP leak, DNS leak) pass cleanly.
+- [x] `docs/NETWORK_ENDPOINTS.md` accurately accounts for 100% of outbound connections.

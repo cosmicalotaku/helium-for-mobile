@@ -1,6 +1,6 @@
 # Project Status & Execution Ledger
 
-> **Last Updated:** 2026-11-05  
+> **Last Updated:** 2026-11-06  
 > **App Name:** Aether Browser (`aether`)  
 > **Package ID:** `app.aether.browser`  
 
@@ -16,14 +16,56 @@
 | **PH-3** | Privacy & De-Googling Core | **DONE** | 5 core privacy patches, `docs/DEFAULTS.md`, `docs/NETWORK_ENDPOINTS.md` completed. |
 | **PH-4** | Extensions Runtime & MV2 | **DONE** | Full Manifest V2 un-guarding, mobile Web Store install support, SAF picker, responsive popups, and 7-extension matrix verified. |
 | **PH-5** | Built-in uBlock Origin | **DONE** | Build-time component extension, toolbar shield quick-toggle, touch element picker, privacy settings, and verification guide completed. |
-| **PH-6** | Helium-Feel UI & Customization | **READY** | Java/XML compact toolbar, button customization, clean NTP, accent palettes. |
-| **PH-7** | Hardening, Performance, QA | Pending | Awaiting PH-6 |
+| **PH-6** | Helium-Feel UI & Customization | **DONE (P0)** | Compact 48dp toolbar, customizable buttons, clean menus, minimalist NTP, AMOLED theme, flat Aether Services settings. |
+| **PH-7** | Hardening, Performance, QA | **READY** | Memory budgets, leak tests, crash audits, device performance. |
 | **PH-8** | Release & Maintenance Automation | Pending | Awaiting PH-7 |
 | **PH-9** | Optional Features (P2) | Backlog | Optional |
 
 ---
 
-## 2. Phase 5 Task Reports
+## 2. Phase 6 Task Reports
+
+```
+TASK: T-6.1 — UI Feature Specifications (docs/ui/FEAT-xx.md)
+STATE: DONE
+FILES: docs/ui/README.md, docs/ui/FEAT-12-compact-toolbar.md, docs/ui/FEAT-13-toolbar-customization.md, docs/ui/FEAT-14-trimmed-overflow-menu.md, docs/ui/FEAT-15-simplified-context-menus.md, docs/ui/FEAT-16-clean-new-tab-page.md, docs/ui/FEAT-17-theming-and-accents.md, docs/ui/FEAT-18-aether-services-settings.md, docs/ui/FEAT-23-tab-hibernation.md, docs/ui/FEAT-24-copy-urls.md, docs/ui/FEAT-25-zoom-presets.md, docs/ui/FEAT-26-offline-onboarding.md
+EVIDENCE: Published 11 comprehensive UI architecture and feature design specifications covering mockups, affected Chromium Android Java/XML files, dimension constants, and SharedPreferences keys.
+NEXT: T-6.2
+
+TASK: T-6.2 — Compact & Customizable Toolbar Layout
+STATE: DONE
+FILES: patches/aether/ui/0015-compact-and-customizable-toolbar.patch, patches/series
+EVIDENCE: Authored unified patch reducing toolbar dimensions to compact 48dp (dimens.xml), 40dp action targets, 36dp omnibox pill; added share/new-tab action views in toolbar_phone.xml; implemented dynamic updateCustomToolbarButtons() in ToolbarPhone.java; added ToolbarCustomizationSettings fragment and XML preferences; added strings to android_chrome_strings.grd.
+NEXT: T-6.3
+
+TASK: T-6.3 — Simplified Overflow & Context Menus
+STATE: DONE
+FILES: patches/aether/ui/0016-clean-overflow-and-context-menus.patch, patches/series
+EVIDENCE: Stripped Google sign-in promos, help and feedback, and sync banners from 3-dot menu; added direct Copy Link action; cleaned context menus in ChromeContextMenuPopulator.java by removing tab group nesting and reading list clutter.
+NEXT: T-6.4
+
+TASK: T-6.4 — Minimalist Clean New Tab Page (NTP)
+STATE: DONE
+FILES: patches/aether/ui/0017-minimalist-clean-new-tab-page.patch, patches/series
+EVIDENCE: Suppressed Google Discover feed coordinator and article prefetching; removed ExploreSites placeholders; centered search omnibox vertically and added user toggle for top shortcut tiles in NewTabPageLayout.java.
+NEXT: T-6.5
+
+TASK: T-6.5 — AMOLED Pure Black & Accent Theming
+STATE: DONE
+FILES: patches/aether/ui/0018-amoled-pure-black-and-accent-theming.patch, patches/series
+EVIDENCE: Added #000000 AMOLED pure black theme option to ThemeSettingsFragment; mapped pure black toolbar and top UI backgrounds in ThemeUtils.java; defined Helium Amber, Neon Cyan, Violet, and Emerald palette color tokens.
+NEXT: T-6.6
+
+TASK: T-6.6 — Settings Restructure & Aether Services Page
+STATE: DONE
+FILES: patches/aether/settings/0019-aether-services-and-flat-settings.patch, patches/series
+EVIDENCE: Flattened settings hierarchy, removed Google account sync header from main_preferences.xml, created AetherServicesSettings fragment and XML layout with transparent toggles for ad blocking, filter updates, extension updates, search suggestions, and prefetching.
+NEXT: Phase 7 (Hardening, Performance, QA) or CI Build Trigger
+```
+
+---
+
+## 3. Phase 5 Task Reports
 
 ```
 TASK: T-5.1 — Architecture Decision Record & Packaging Pipeline

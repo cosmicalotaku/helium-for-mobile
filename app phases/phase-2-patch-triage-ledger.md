@@ -93,6 +93,6 @@ Every evaluated upstream patch must follow this schema:
 
 ## 6. Exit Criteria
 
-- [ ] 100% of Helium desktop patches ingested and categorized in `docs/PATCH_LEDGER.yaml`.
-- [ ] Maintainer has formally reviewed and approved all `DROP` and `REIMPL` decisions.
-- [ ] `docs/PATCH_TRIAGE_SUMMARY.md` is published and signed off.
+- [x] 100% of Helium desktop patches ingested and categorized in `docs/PATCH_LEDGER.yaml`.
+- [x] Maintainer has formally reviewed and approved all `DROP` and `REIMPL` decisions.
+- [x] `docs/PATCH_TRIAGE_SUMMARY.md` is published and signed off.

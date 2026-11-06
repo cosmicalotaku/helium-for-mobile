@@ -1,0 +1,190 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aether Browser Maintainers <maintainers@aether.browser>
+Date: Fri, 6 Nov 2026 00:00:00 +0000
+Subject: [PATCH] [settings] Restructure settings hierarchy and add dedicated Aether Services privacy page
+Feature: FEAT-18
+Origin: original
+
+Flattens the settings hierarchy, strips Google account sync headers, and introduces
+a prominent 'Aether Services' preference page exposing transparent user toggles for
+all network-active features (filter updates, extension updates, prefetch, suggestions).
+---
+ chrome/android/java/res/xml/aether_services_preferences.xml                               | 56 ++++++++++++++++++++++
+ chrome/android/java/res/xml/main_preferences.xml                                          | 10 ++++
+ chrome/android/java/src/org/chromium/chrome/browser/settings/AetherServicesSettings.java | 48 +++++++++++++++++++
+ chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java           |  8 ++++
+ chrome/browser/ui/android/strings/android_chrome_strings.grd                              | 28 +++++++++++
+ 5 files changed, 150 insertions(+)
+ create mode 100644 chrome/android/java/res/xml/aether_services_preferences.xml
+ create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/settings/AetherServicesSettings.java
+
+diff --git a/chrome/android/java/res/xml/aether_services_preferences.xml b/chrome/android/java/res/xml/aether_services_preferences.xml
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/res/xml/aether_services_preferences.xml
+@@ -0,0 +1,56 @@
++<?xml version="1.0" encoding="utf-8"?>
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto">
++
++    <PreferenceCategory
++        android:title="@string/aether_services_content_blocking_category">
++
++        <Preference
++            android:key="aether_adblock_dashboard"
++            android:title="@string/aether_adblock_title"
++            android:summary="@string/aether_adblock_summary" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_filter_updates"
++            android:title="@string/aether_filter_updates_title"
++            android:summary="@string/aether_filter_updates_summary"
++            android:defaultValue="true" />
++
++    </PreferenceCategory>
++
++    <PreferenceCategory
++        android:title="@string/aether_services_extensions_category">
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_extension_updates"
++            android:title="@string/aether_extension_updates_title"
++            android:summary="@string/aether_extension_updates_summary"
++            android:defaultValue="true" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="aether_anonymize_requests"
++            android:title="@string/aether_anonymize_title"
++            android:summary="@string/aether_anonymize_summary"
++            android:defaultValue="true" />
++
++    </PreferenceCategory>
++
++    <PreferenceCategory
++        android:title="@string/aether_services_network_category">
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="search_suggestions"
++            android:title="@string/search_suggestions_title"
++            android:summary="@string/search_suggestions_summary"
++            android:defaultValue="false" />
++
++        <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++            android:key="network_prediction"
++            android:title="@string/network_prediction_title"
++            android:summary="@string/network_prediction_summary"
++            android:defaultValue="false" />
++
++    </PreferenceCategory>
++
++</PreferenceScreen>
+diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
+--- a/chrome/android/java/res/xml/main_preferences.xml
++++ b/chrome/android/java/res/xml/main_preferences.xml
+@@ -14,6 +14,16 @@
+     <PreferenceCategory
+         android:key="account_and_google_services_section"
+         android:order="0">
++        <Preference
++            android:key="aether_services"
++            android:title="@string/aether_services_title"
++            android:summary="@string/aether_services_summary"
++            android:icon="@drawable/ic_shield_24dp"
++            android:fragment="org.chromium.chrome.browser.settings.AetherServicesSettings"
++            android:order="-100" />
++    </PreferenceCategory>
++
++    <PreferenceCategory
++        android:key="basics_section"
++        android:order="10">
+         <Preference
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/AetherServicesSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/AetherServicesSettings.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/AetherServicesSettings.java
+@@ -0,0 +1,48 @@
++package org.chromium.chrome.browser.settings;
++
++import android.os.Bundle;
++import androidx.preference.Preference;
++import androidx.preference.PreferenceFragmentCompat;
++import org.chromium.chrome.R;
++import org.chromium.chrome.browser.profiles.Profile;
++import org.chromium.chrome.browser.tab.Tab;
++import org.chromium.components.browser_ui.settings.ChromeSwitchPreference;
++import org.chromium.components.user_prefs.UserPrefs;
++import org.chromium.content_public.browser.LoadUrlParams;
++
++/**
++ * Settings fragment providing transparent controls over all network-active features in Aether.
++ */
++public class AetherServicesSettings extends PreferenceFragmentCompat {
++    @Override
++    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
++        setPreferencesFromResource(R.xml.aether_services_preferences, rootKey);
++        getActivity().setTitle(R.string.aether_services_title);
++
++        Preference adblockDash = findPreference("aether_adblock_dashboard");
++        if (adblockDash != null) {
++            adblockDash.setOnPreferenceClickListener(pref -> {
++                getActivity().finish();
++                return true;
++            });
++        }
++    }
++}
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
+@@ -120,6 +120,14 @@ public class MainSettings extends PreferenceFragmentCompat {
+         if (toolbarCustomizationPref != null) {
+             toolbarCustomizationPref.setVisible(true);
+         }
++
++        Preference aetherServicesPref = findPreference("aether_services");
++        if (aetherServicesPref != null) {
++            aetherServicesPref.setVisible(true);
++        }
+     }
+ 
+     @Override
+diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1107,6 +1107,34 @@
+       <message name="IDS_THEME_AMOLED_SUMMARY" desc="Summary for AMOLED pure black theme.">
+         Maximum battery savings on OLED screens with true #000000 pitch black surfaces.
+       </message>
++      <!-- Aether Services Settings Strings -->
++      <message name="IDS_AETHER_SERVICES_TITLE" desc="Title for Aether Services preference screen.">
++        Aether Services
++      </message>
++      <message name="IDS_AETHER_SERVICES_SUMMARY" desc="Summary for Aether Services preference screen.">
++        Content blocking, network privacy, and update controls
++      </message>
++      <message name="IDS_AETHER_SERVICES_CONTENT_BLOCKING_CATEGORY" desc="Category header for content blocking.">
++        Content &amp; Tracker Blocking
++      </message>
++      <message name="IDS_AETHER_SERVICES_EXTENSIONS_CATEGORY" desc="Category header for extension services.">
++        Extension Maintenance
++      </message>
++      <message name="IDS_AETHER_SERVICES_NETWORK_CATEGORY" desc="Category header for network privacy.">
++        Network Silence &amp; Lookups
++      </message>
++      <message name="IDS_AETHER_EXTENSION_UPDATES_TITLE" desc="Title for extension updates toggle.">
++        Automatic Extension Updates
++      </message>
++      <message name="IDS_AETHER_EXTENSION_UPDATES_SUMMARY" desc="Summary for extension updates toggle.">
++        Periodically check for and download extension updates
++      </message>
++      <message name="IDS_AETHER_ANONYMIZE_TITLE" desc="Title for anonymize store requests toggle.">
++        Anonymize Store Requests
++      </message>
++      <message name="IDS_AETHER_ANONYMIZE_SUMMARY" desc="Summary for anonymize store requests toggle.">
++        Strip user tokens and client identifiers from extension queries
++      </message>
+     </messages>
+   </release>
+ </grit>
+-- 
+2.43.0
